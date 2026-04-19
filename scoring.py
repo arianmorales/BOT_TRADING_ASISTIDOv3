@@ -1,17 +1,18 @@
 """
 =================================================================
-SCORING.PY - Weighted Scoring System
+SCORING.PY - Weighted Scoring System (OPTIMIZADO)
 =================================================================
 Sistema de scoring ponderado para momentum:
 - Fórmula: score = Σ max(0, cand_change_tf - curr_change_tf) * peso_tf
 - Pesos configurables
 - Soporte para fuerza relativa vs BTC
 - Umbral mínimo configurable
+- Enriquecimiento paralelo con asyncio.gather()
 =================================================================
 """
 import asyncio
 from typing import Dict, Any, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from config_loader import config
 from logger import log_debug
@@ -53,6 +54,30 @@ def calc_change(open_price: float, close_price: float) -> float:
     return ((close_price - open_price) / open_price) * 100
 
 
+async def enrich_ticker_async(ticker: Dict[str, Any], symbol: str) -> TickerData:
+    """
+    Enriquece un ticker con datos calculados (versión async).
+    """
+    try:
+        data = TickerData(
+            symbol=symbol,
+            last=float(ticker.get('last', 0)),
+            open=float(ticker.get('open', 0)),
+            high=float(ticker.get('high', 0)),
+            low=float(ticker.get('low', 0)),
+            volume=float(ticker.get('volume', 0)),
+            value=float(ticker.get('value', 0))
+        )
+        
+        # Calcular change_24h desde el ticker
+        data.change_24h = calc_change(data.open, data.last)
+        
+        return data
+    except Exception as e:
+        log_debug(f"Error enriching {symbol}: {e}")
+        return TickerData(symbol=symbol)
+
+
 def enrich_ticker(ticker: Dict[str, Any], symbol: str = "") -> TickerData:
     """
     Enriquece un ticker con datos calculados.
@@ -77,6 +102,20 @@ def enrich_ticker(ticker: Dict[str, Any], symbol: str = "") -> TickerData:
         return TickerData(symbol=symbol)
 
 
+async def enrich_with_history_async(ticker_data: TickerData) -> TickerData:
+    """
+    Enriquece ticker con datos históricos (change_1h, change_7d) - async.
+    """
+    try:
+        change_1h, change_7d = await api_client.api_client.get_historical_changes(ticker_data.symbol)
+        ticker_data.change_1h = change_1h
+        ticker_data.change_7d = change_7d
+        return ticker_data
+    except Exception as e:
+        log_debug(f"Error enrich_with_history {ticker_data.symbol}: {e}")
+        return ticker_data
+
+
 def enrich_with_history(ticker_data: TickerData) -> TickerData:
     """
     Enriquece ticker con datos históricos (change_1h, change_7d).
@@ -89,6 +128,28 @@ def enrich_with_history(ticker_data: TickerData) -> TickerData:
     except Exception as e:
         log_debug(f"Error enrich_with_history {ticker_data.symbol}: {e}")
         return ticker_data
+
+
+async def enrich_multiple_async(tickers_data: List[TickerData]) -> List[TickerData]:
+    """
+    Enriquece múltiples tickers en paralelo con sus datos históricos.
+    Optimización clave: usa asyncio.gather para llamadas concurrentes.
+    """
+    if not tickers_data:
+        return []
+    
+    tasks = [enrich_with_history_async(td) for td in tickers_data]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    enriched = []
+    for i, result in enumerate(results):
+        if isinstance(result, TickerData):
+            enriched.append(result)
+        else:
+            # Mantener original si hubo error
+            enriched.append(tickers_data[i])
+    
+    return enriched
 
 
 def calculate_relative_strength_vs_btc(
@@ -135,6 +196,28 @@ def calculate_atr(ticker_symbol: str, period: int = 14) -> float:
         return 0.0
 
 
+async def check_volume_ma_ratio_async(ticker_data: TickerData) -> TickerData:
+    """
+    Compara volumen actual vs media móvil 7 días - async.
+    """
+    try:
+        klines = await api_client.api_client.get_klines(ticker_data.symbol, "1day", 7)
+        
+        if len(klines) < 7:
+            return ticker_data
+        
+        volumes = [float(k.get('volume', 0)) for k in klines[:-1]]  # sin el actual
+        avg_volume = sum(volumes) / len(volumes) if volumes else 0
+        
+        if avg_volume > 0:
+            ticker_data.vol_ma_ratio = (ticker_data.volume / avg_volume) * 100
+        
+        return ticker_data
+    except Exception as e:
+        log_debug(f"Error checking volume MA ratio for {ticker_data.symbol}: {e}")
+        return ticker_data
+
+
 def check_volume_ma_ratio(ticker_data: TickerData) -> TickerData:
     """
     Compara volumen actual vs media móvil 7 días.
@@ -155,6 +238,29 @@ def check_volume_ma_ratio(ticker_data: TickerData) -> TickerData:
         return ticker_data
     except Exception as e:
         log_debug(f"Error checking volume MA ratio for {ticker_data.symbol}: {e}")
+        return ticker_data
+
+
+async def check_spread_async(ticker_data: TickerData) -> TickerData:
+    """
+    Verifica spread (ask - bid) / last - async.
+    """
+    try:
+        depth = await api_client.api_client.get_depth(ticker_data.symbol, limit=5)
+        
+        bids = depth.get('bids', [])
+        asks = depth.get('asks', [])
+        
+        if bids and asks:
+            bid = float(bids[0].get('price', 0))
+            ask = float(asks[0].get('price', 0))
+            
+            if ticker_data.last > 0:
+                ticker_data.spread = (ask - bid) / ticker_data.last
+        
+        return ticker_data
+    except Exception as e:
+        log_debug(f"Error checking spread for {ticker_data.symbol}: {e}")
         return ticker_data
 
 
@@ -179,6 +285,47 @@ def check_spread(ticker_data: TickerData) -> TickerData:
     except Exception as e:
         log_debug(f"Error checking spread for {ticker_data.symbol}: {e}")
         return ticker_data
+
+
+async def enrich_all_async(tickers_data: List[TickerData], include_spread: bool = False, include_volume_ma: bool = True) -> List[TickerData]:
+    """
+    Enriquece múltiples tickers con todos los datos en paralelo.
+    Optimización: todas las llamadas API se hacen concurrentemente.
+    """
+    if not tickers_data:
+        return []
+    
+    # Primero enriquecer con historia
+    enriched = await enrich_multiple_async(tickers_data)
+    
+    # Preparar tareas para volumen y spread
+    tasks = []
+    for td in enriched:
+        task_list = []
+        if include_volume_ma:
+            task_list.append(check_volume_ma_ratio_async(td))
+        if include_spread:
+            task_list.append(check_spread_async(td))
+        if task_list:
+            tasks.append((td, task_list))
+    
+    # Ejecutar en paralelo por ticker
+    if tasks:
+        results = await asyncio.gather(*[asyncio.gather(*tl) for _, tl in tasks], return_exceptions=True)
+        
+        for i, (td, _) in enumerate(tasks):
+            if i < len(results):
+                res = results[i]
+                if isinstance(res, (list, tuple)):
+                    for r in res:
+                        if isinstance(r, TickerData):
+                            # Actualizar campos
+                            if hasattr(r, 'vol_ma_ratio'):
+                                td.vol_ma_ratio = r.vol_ma_ratio
+                            if hasattr(r, 'spread'):
+                                td.spread = r.spread
+    
+    return enriched
 
 
 def calculate_momentum_score(
