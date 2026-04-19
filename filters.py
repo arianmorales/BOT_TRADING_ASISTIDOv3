@@ -1,12 +1,13 @@
 """
 =================================================================
-FILTERS.PY - Dynamic Liquidity & Volatility Filters
+FILTERS.PY - Dynamic Liquidity & Volatility Filters (OPTIMIZADO)
 =================================================================
 Sistema de filtros dinámicos:
 - Ratio volumen/capitalización
 - Volatilidad extrema
 - Volumen relativo (vs media 7 días)
 - Todos configurables
+- Early-exit optimization para mejor rendimiento
 =================================================================
 """
 import asyncio
@@ -29,7 +30,7 @@ class FilterResult:
 
 class DynamicFilters:
     """
-    Filtros dinámicos configurables.
+    Filtros dinámicos configurables con early-exit optimization.
     """
     
     def __init__(self):
@@ -59,19 +60,22 @@ class DynamicFilters:
     async def check_basic_filters(self, ticker_data: scoring.TickerData) -> FilterResult:
         """
         Filtros básicos: volumen y precio.
+        Early-exit: chequea lo más barato primero.
         """
-        if ticker_data.value < self.min_volume_usd:
-            return FilterResult(
-                passed=False,
-                reason=f"volumen bajo: ${ticker_data.value:,.0f} < ${self.min_volume_usd:,}",
-                details={"volume": ticker_data.value}
-            )
-        
+        # Chequear precio primero (operación barata)
         if ticker_data.last < self.min_price:
             return FilterResult(
                 passed=False,
                 reason=f"precio muy bajo: {ticker_data.last}",
                 details={"price": ticker_data.last}
+            )
+        
+        # Luego volumen (también barato)
+        if ticker_data.value < self.min_volume_usd:
+            return FilterResult(
+                passed=False,
+                reason=f"volumen bajo: ${ticker_data.value:,.0f} < ${self.min_volume_usd:,}",
+                details={"volume": ticker_data.value}
             )
         
         return FilterResult(passed=True, reason="ok", details={})
@@ -97,25 +101,30 @@ class DynamicFilters:
     async def check_volatility(self, ticker_data: scoring.TickerData) -> FilterResult:
         """
         Filtro: volatilidad extrema.
+        Early-exit: si allow_high_vol, saltar chequeo.
         """
+        # Early-exit si está permitido alta volatilidad
+        if self.allow_high_vol:
+            log_debug(f"High volatility mode enabled for {ticker_data.symbol}")
+            return FilterResult(passed=True, reason="ok", details={})
+        
         abs_change = abs(ticker_data.change_24h)
         
         if abs_change > self.max_volatility_24h:
-            if not self.allow_high_vol:
-                return FilterResult(
-                    passed=False,
-                    reason=f"volatilidad extrema: {abs_change:.2f}% > {self.max_volatility_24h}%",
-                    details={"change_24h": ticker_data.change_24h}
-                )
-            else:
-                log_debug(f"High volatility allowed for {ticker_data.symbol}: {abs_change:.2f}%")
+            return FilterResult(
+                passed=False,
+                reason=f"volatilidad extrema: {abs_change:.2f}% > {self.max_volatility_24h}%",
+                details={"change_24h": ticker_data.change_24h}
+            )
         
         return FilterResult(passed=True, reason="ok", details={})
     
     async def check_relative_volume(self, ticker_data: scoring.TickerData) -> FilterResult:
         """
         Filtro: volumen vs media 7 días.
+        Early-exit: si no usa volume_ma, retornar ok inmediatamente.
         """
+        # Early-exit si no usa volume MA
         if not self.use_volume_ma:
             return FilterResult(passed=True, reason="ok", details={})
         
@@ -150,37 +159,38 @@ class DynamicFilters:
     
     async def apply_all_filters(self, ticker_data: scoring.TickerData) -> Tuple[bool, str]:
         """
-        Aplica todos los filtros.
+        Aplica todos los filtros con early-exit.
+        Orden optimizado: de más barato a más caro.
         """
-        # Basic filters
+        # 1. Basic filters (muy baratos)
         result = await self.check_basic_filters(ticker_data)
         if not result.passed:
             ticker_data.is_filtered = True
             ticker_data.filter_reason = result.reason
             return False, result.reason
         
-        # Vol/MCap ratio
-        result = await self.check_vol_mcap_ratio(ticker_data)
-        if not result.passed:
-            ticker_data.is_filtered = True
-            ticker_data.filter_reason = result.reason
-            return False, result.reason
-        
-        # Volatility
+        # 2. Volatility (barato, dato ya calculado)
         result = await self.check_volatility(ticker_data)
         if not result.passed:
             ticker_data.is_filtered = True
             ticker_data.filter_reason = result.reason
             return False, result.reason
         
-        # Relative volume
+        # 3. Vol/MCap ratio (barato, cálculo simple)
+        result = await self.check_vol_mcap_ratio(ticker_data)
+        if not result.passed:
+            ticker_data.is_filtered = True
+            ticker_data.filter_reason = result.reason
+            return False, result.reason
+        
+        # 4. Relative volume (requiere datos históricos)
         result = await self.check_relative_volume(ticker_data)
         if not result.passed:
             ticker_data.is_filtered = True
             ticker_data.filter_reason = result.reason
             return False, result.reason
         
-        # Spread
+        # 5. Spread (más caro, requiere llamada API)
         result = await self.check_spread_filter(ticker_data)
         if not result.passed:
             ticker_data.is_filtered = True
