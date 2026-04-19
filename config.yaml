@@ -1,0 +1,171 @@
+# ============================================================
+# CONFIGURACIÓN DEL BOT DE TRADING ASISTIDO v2.0
+# ============================================================
+# Quantum Momentum Rotation Bot for CoinEx
+# Desarrollado por: Quant Developer Senior
+# ============================================================
+
+# -------------------
+# CONFIGURACIÓN GENERAL
+# -------------------
+bot:
+  name: "Quantum Momentum Bot"
+  version: "2.0.0"
+  mode: "production"  # production, simulation, debug
+  check_interval: 300  # segundos entre ciclos
+  debug_interval: 15  # segundos en modo debug
+  max_cycles_unlimited: true  # false = ejecutar max_cycles y detener
+  max_cycles: 100
+
+# -------------------
+# CONFIGURACIÓN DE MERCADO
+# -------------------
+market:
+  exchange: "CoinEx"
+  base_api: "https://api.coinex.com/v2"
+  quote: "USDT"
+  min_volume_usd: 500000  # $500K mínimo
+  max_markets_scan: 2000  # máximo pares a escanear
+  scan_parallel: true  # usar búsquedas paralelas
+
+# -------------------
+# SCORING PONDERADO
+# -------------------
+scoring:
+  weights:
+    1h: 0.2
+    24h: 0.5
+    7d: 0.3
+  min_score_threshold: 0.4  # mínimo para ser candidato válido
+  use_relative_strength_btc: true  # comparar vs BTC
+  require_all_timeframes: false  # true = rígido, false = flexible
+
+# -------------------
+# GESTIÓN DE RIESGO
+# -------------------
+risk:
+  # Stop-Loss
+  stop_loss_pct: -5.0  # -5% fijo
+  use_atr_stop: false  # usar ATR en lugar de固定 %
+  atr_period: 14
+  atr_multiplier: 2.0
+  
+  # Take-Profit
+  take_profit_pct: 10.0  # +10% take profit fijo
+  use_trailing_stop: true
+  trailing_trigger_pct: 3.0  # activa trailing tras +3%
+  trailing_distance_pct: 2.0  # distancia trailing
+  
+  # Cooldown
+  cooldown_hours: 12  # horas antes de volver a un par
+  cooldown_tracked_by: "symbol"  # symbol, pair
+  
+  # Drawdown
+  max_drawdown_pct: 15.0  # pausa si cae 15% desde ATH
+  reset_on_manual_confirm: true
+  
+  # Spread
+  max_spread_pct: 0.0015  # 0.15% máximo
+  
+  # Rotación Parcial
+  rotation_percentage: 100  # % del capital a mover (100 = todo)
+  min_holding_strength_to_partially_keep: 0.3  # si score > 0.3, mantener partial
+
+# -------------------
+# FILTROS DINÁMICOS
+# -------------------
+filters:
+  # Volumen vs Capitalización
+  min_vol_mcap_ratio: 0.0001  # volume / market_cap
+  
+  # Volatilidad
+  max_volatility_24h: 20.0  # descartar > 20% daily change
+  allow_high_volatility_mode: false  # modo para crypto altamente volátiles
+  
+  # Volumen Relativo (vs media 7 días)
+  min_relative_volume_pct: 60.0  # mínimo 60% de la media 7d
+  use_volume_ma: true
+  
+  # Spread
+  max_spread_pct: 0.0015
+  
+  # Mínimos adicionales
+  min_price: 0.0001  # precio mínimo
+  min_trades_24h: 100  # trades mínimos
+
+# -------------------
+# CACHE Y PERFORMANCE
+# -------------------
+cache:
+  tickers_ttl: 300  # 5 minutos
+  klines_ttl: 600  # 10 minutos
+  enable_auto_invalidation: true
+  max_cache_size_mb: 50
+
+async:
+  max_concurrent_requests: 5
+  request_timeout: 30
+  retry_attempts: 3
+  retry_backoff_base: 2.0  # segundos
+  retry_jitter: true
+  use_backoff_exponential: true
+
+# -------------------
+# WEBSOCKETS (PREPARADO)
+# -------------------
+websocket:
+  enabled: false  # por defecto usar REST
+  reconnect_attempts: 5
+  reconnect_delay: 5
+  ping_interval: 30
+
+# -------------------
+# MÉTRICAS
+# -------------------
+metrics:
+  save_to_json: true
+  metrics_file: "metrics.json"
+  save_interval: 1  # cada N ciclos
+  track_pnl: true
+  track_drawdown: true
+  track_hold_time: true
+  track_false_signals: true
+
+# -------------------
+# LOGGING
+# -------------------
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  console_format: "[{level}] {message}"
+  file_format: "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+  log_dir: "logs"
+  separate_logs: true
+  debug_log: "bot_debug.log"
+  trades_log: "bot_trades.log"
+  errors_log: "bot_errors.log"
+  main_log: "bot.log"
+  rotate_max_bytes: 10485760  # 10MB
+  rotate_backup_count: 5
+
+# -------------------
+# NOTIFICACIONES
+# -------------------
+notifications:
+  whatsapp:
+    session_dir: "whatsapp_session"
+    headless: true
+    message_delay: 0.5
+    
+  email:
+    enabled: true
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    use_tls: true
+    
+  alerts:
+    on_rotation: true
+    on_stop_loss: true
+    on_take_profit: true
+    on_drawdown_alert: true
+    on_error: true
+    on_no_candidates: false

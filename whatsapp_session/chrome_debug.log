@@ -1,0 +1,19 @@
+[25808:15356:0419/012318.557:INFO:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:238] No machine level policy manager exists.
+[4652:18180:0419/012318.651:ERROR:ui\gl\direct_composition_support.cc:243] GetGpuDriverOverlayInfo: Failed to retrieve video device
+[25808:15356:0419/012319.372:INFO:CONSOLE:185] "Event handler of 'x-storagemutated-1' event must be added on the initial evaluation of worker script.", source: https://static.whatsapp.net/rsrc.php/v4/y-/r/euk1mzz9vF4.js (185)
+[25808:15356:0419/012319.593:INFO:CONSOLE:79] "ErrorUtils caught an error:
+
+[storage] storage bucket persistence denied (aquire-persistent-storage-denied)
+
+Subsequent non-fatal errors won't be logged; see https://fburl.com/debugjs. [object Object]", source: https://static.whatsapp.net/rsrc.php/v4/yn/r/1Rk4BX8YPYQ.js (79)
+[25808:15356:0419/012320.815:INFO:CONSOLE:170] "The PerformanceObserver does not support buffered flag with the entryTypes argument.", source: https://static.whatsapp.net/rsrc.php/v4/yY/r/F3Bh_vg1DviLWMP-XotM2KHTEFngCYwvvPbjCpseDapUrBGl1VNl-DEa_zHNlDMhh_CeeUTDH2pdaN2BaG9ISuhoe0qnL2dG90HwJ34wthXfB3u63lw_MkRQA.js (170)
+[25808:15356:0419/012324.561:INFO:CONSOLE:0] "Blocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808", source: https://web.whatsapp.com/ (0)
+[25808:15356:0419/012327.133:INFO:CONSOLE:79] "ErrorUtils caught an error:
+
+[storage] storage bucket persistence denied (aquire-persistent-storage-denied)
+
+Subsequent non-fatal errors won't be logged; see https://fburl.com/debugjs. [object Object]", source: https://static.whatsapp.net/rsrc.php/v4/yn/r/1Rk4BX8YPYQ.js (79)
+[25808:15356:0419/012327.853:INFO:CONSOLE:170] "The PerformanceObserver does not support buffered flag with the entryTypes argument.", source: https://static.whatsapp.net/rsrc.php/v4/yY/r/F3Bh_vg1DviLWMP-XotM2KHTEFngCYwvvPbjCpseDapUrBGl1VNl-DEa_zHNlDMhh_CeeUTDH2pdaN2BaG9ISuhoe0qnL2dG90HwJ34wthXfB3u63lw_MkRQA.js (170)
+[25808:22820:0419/012335.247:ERROR:google_apis\gcm\engine\registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[3736:1500:0419/012335.682:WARNING:net\extras\sqlite\sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net\extras\sqlite\sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.
+[3736:1500:0419/012335.682:WARNING:net\extras\sqlite\sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net\extras\sqlite\sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.

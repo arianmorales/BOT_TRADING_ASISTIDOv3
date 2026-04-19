@@ -1,0 +1,21 @@
+{
+  "holding": "XMR",
+  "amount": 0.74968134,
+  "holding_price": 0.0,
+  "entry_price": 0.0,
+  "entry_time": "",
+  "email": "alerta.tecnica.crypto@gmail.com",
+  "email_password": "cllr cjia clec ixrz",
+  "phone": "+5352593370",
+  "whatsapp_session_active": false,
+  "equity": 0.0,
+  "peak_equity": 0.0,
+  "total_rotations": 0,
+  "successful_rotations": 0,
+  "false_signals": 0,
+  "cooldowns": {},
+  "last_cycle_time": "",
+  "atr": 0.0,
+  "is_paused": false,
+  "pause_reason": ""
+}

@@ -1,0 +1,29 @@
+2026/04/19-01:23:19.390 4278 Reusing MANIFEST C:\_APPS\Coinex\BOT_TRADING_ASISTIDOv2\whatsapp_session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/19-01:23:19.391 4278 Recovering log #47
+2026/04/19-01:23:19.432 4278 Reusing old log C:\_APPS\Coinex\BOT_TRADING_ASISTIDOv2\whatsapp_session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000047.log 
+2026/04/19-01:23:19.433 4278 Delete type=2 #42
+2026/04/19-01:23:19.433 4278 Delete type=2 #45
+2026/04/19-01:23:19.433 4278 Delete type=2 #46
+2026/04/19-01:23:19.433 4278 Delete type=2 #48
+2026/04/19-01:23:22.597 5580 Level-0 table #53: started
+2026/04/19-01:23:22.621 5580 Level-0 table #53: 1150378 bytes OK
+2026/04/19-01:23:22.622 5580 Delete type=0 #47
+2026/04/19-01:23:22.630 5580 Compacting 1@1 + 2@2 files
+2026/04/19-01:23:22.711 5580 Generated table #54@1: 50848 keys, 2204896 bytes
+2026/04/19-01:23:22.739 5580 Generated table #55@1: 22576 keys, 1139516 bytes
+2026/04/19-01:23:22.739 5580 Compacted 1@1 + 2@2 files => 3344412 bytes
+2026/04/19-01:23:22.740 5580 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/19-01:23:22.741 5580 Delete type=2 #49
+2026/04/19-01:23:22.741 5580 Delete type=2 #50
+2026/04/19-01:23:22.741 5580 Delete type=2 #53
+2026/04/19-01:23:29.532 5580 Level-0 table #57: started
+2026/04/19-01:23:29.558 5580 Level-0 table #57: 1086697 bytes OK
+2026/04/19-01:23:29.561 5580 Delete type=0 #52
+2026/04/19-01:23:29.572 5580 Compacting 1@1 + 2@2 files
+2026/04/19-01:23:29.648 5580 Generated table #58@1: 51943 keys, 2206174 bytes
+2026/04/19-01:23:29.687 5580 Generated table #59@1: 24389 keys, 1241436 bytes
+2026/04/19-01:23:29.687 5580 Compacted 1@1 + 2@2 files => 3447610 bytes
+2026/04/19-01:23:29.688 5580 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/19-01:23:29.688 5580 Delete type=2 #54
+2026/04/19-01:23:29.688 5580 Delete type=2 #55
+2026/04/19-01:23:29.688 5580 Delete type=2 #57
