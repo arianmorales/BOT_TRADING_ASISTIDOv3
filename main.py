@@ -138,6 +138,62 @@ def check_and_init_whatsapp() -> bool:
 # ANALYSIS LOOP
 # ============================================================================
 
+async def run_once() -> None:
+    """Ejecuta un solo ciclo"""
+    log_section("EJECUTAR UN CICLO")
+    state = load_state()
+    show_state(state)
+    
+    # WhatsApp se verificará solo cuando necesite enviar notificationsicación
+    #check_and_init_whatsapp(skip_on_error=True)
+    
+    # Obtener datos
+    log_debug("[1] Consultando API de CoinEx...")
+    tickers = api_client.get_all_tickers()
+    
+    if not tickers:
+        log_error("[!] No se pudieron obtener datos del mercado")
+        return
+    
+    log_info(f"[OK] Mercados obtenidos: {len(tickers)}")
+    
+    # Analizar
+    log_debug("[2] Analizando mercado...")
+    current, candidate, reason = await analyze_market(tickers, state)
+    
+    holding = state.get("holding", "")
+    
+    if current:
+        log_info(f"Holding: {current.symbol} | Precio: {current.last} | "
+                f"24h: {current.change_24h:+.2f}%")
+    
+    if candidate:
+        log_info(f"*** OPORTUNIDAD: {holding} -> {candidate.symbol}")
+        log_info(f"    Score: {candidate.score:.3f}")
+        log_info(f"    Cambio 24h: {candidate.change_24h:+.2f}%")
+        
+        await notificationsy_opportunity(state, current, candidate, "rotate")
+        
+        log_info("[5] Esperando confirmación...")
+        confirm_swap(state)
+    else:
+        log_info(f"[!] {reason}")
+    
+    # Cerrar sesión
+    try:
+        api_client.api_client.close()
+    except:
+        pass
+
+
+async def analyze_market(
+    tickers: Dict[str, Dict[str, Any]],
+    state: Dict[str, Any]
+) -> Tuple[Optional[scoring.TickerData], Optional[scoring.TickerData], str]:
+    """Ejecuta análisis de mercado"""
+    return await analyzer.analyzer.analyze(tickers, state)
+
+
 def main() -> None:
     """CLI principal para controlar el bot.
 
@@ -193,13 +249,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-async def analyze_market(
-    tickers: Dict[str, Dict[str, Any]],
-    state: Dict[str, Any]
-) -> Tuple[Optional[scoring.TickerData], Optional[scoring.TickerData], str]:
-    """Ejecuta análisis de mercado"""
-    return await analyzer.analyzer.analyze(tickers, state)
 
 
 async def notificationsy_opportunity(
